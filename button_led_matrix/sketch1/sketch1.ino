@@ -1,4 +1,4 @@
-/*
+ /*
 +-------+-------+
 |       |       |
 |   1   |   3   |
@@ -53,8 +53,7 @@ void setup(){
   pinMode(greenLED, OUTPUT);
   pinMode(blueLED,  OUTPUT);
 
-  //Serial.begin(9600);           // set up Serial library at 9600 bps
-  //Serial.println("Starting...");  // prints hello with ending line break     
+  Serial.begin(9600);           // set up Serial library at 9600 bps
 }
 
 const int ON = LOW;
@@ -65,7 +64,13 @@ int interval = 40;
 
 int state = 0;
 
+const int TOUCH_UP_DELAY = 1000;
+
+unsigned long timers[]     = {0,0,0,0};
+int downstates[] = {0,0,0,0};
+
 void loop(){
+  unsigned long current_time = millis();
   int btn1 = digitalRead(buttonGround1);
   int btn2 = digitalRead(buttonGround2);
   int btn3 = digitalRead(buttonGround3);
@@ -73,54 +78,59 @@ void loop(){
 
   setFourLEDs(dark, dark, dark, dark);
 
- // delay(100);
-  if(btn1 == HIGH){
+  if(downstates[0] == 1 || btn1 == HIGH){
+    downstates[0] = 1;
+    if(btn1 == HIGH){
+      timers[0] = current_time >= 0 ? current_time : 0;
+      if(timers[0] < 0){
+        setLED(ledGround2, green);
+      }
+    }
     setLED(ledGround1, red);
-    state = 1;
-//    setFourLEDs(red, dark, dark, dark);
   }
-  else if(btn2 == HIGH){
+  if(btn2 == HIGH){
     setLED(ledGround2, green);
-    state = 2;
-//    setFourLEDs(dark, green, dark, dark);
   }
-  else if(btn3 == HIGH){
+  if(btn3 == HIGH){
     setLED(ledGround3, blue);
-    state = 3;
-  //  setFourLEDs(dark, dark, blue, dark);
   }
-  else if(btn4 == HIGH){
+  if(btn4 == HIGH){
     setLED(ledGround4, yellow);
-    state = 4;
-//    setFourLEDs(dark, dark, dark, yellow);
-  }
-  else {
-    state = 0; 
   }
 
+  if(timers[0] < 0){
+    setLED(ledGround4, yellow);
+  }
 
- if(state > 0){
-    Serial.begin(9600);           // set up Serial library at 9600 bps
-    Serial.println("button being pressed");  // prints hello with ending line break     
-    Serial.println(state);
- }
-  
-//    Serial.print(digitalRead(buttonGround1));
-//    Serial.println("button press occurred");  // prints hello with ending line break     
- 
+  if(timers[0] > 0){
+    setLED(ledGround3, blue);
+  }
 
-  
+  if(btn1 == LOW && timers[0] > 0){
+    // Serial.print("Millis: ");
+    // Serial.print(millis());
+    // Serial.print("   Timer: ");
+    // Serial.println(timers[0]);
+
+    if(current_time - timers[0] >= 200){
+      downstates[0] = 0;
+      timers[0] = 0;
+      Serial.println("btn1 is off");
+    }
+  }
+
+
 //  int old_state = state;
-//  
+//
 //  if(counter == interval*4){
 //    counter = 0;
 //  }
-  
+
 //    setLED(ledGround1, red);
 //    setLED(ledGround2, red);
 //    setLED(ledGround3, red);
 //    setLED(ledGround4, red);
-//  
+//
 //  if(counter >= 0 && counter < interval){
 //    state = 1;
 //    setLED(ledGround1, red);
@@ -137,19 +147,27 @@ void loop(){
 //    setLED(ledGround2, red);
 //    setLED(ledGround3, green);
 //  }
-  
-  
+
+ // if(old_state != state){
+    //Serial.begin(9600);           // set up Serial library at 9600 bps
+  //  Serial.println("color change occurred");  // prints hello with ending line break
+ // }
+
+ // Serial.print(digitalRead(buttonGround1));
+//     Serial.println("button press occurred");  // prints hello with ending line break
+//  }
+
  // delay(1000);
  // counter += 1;
 }
 
 void setLED(int ledPin, int rgbColor[]){
   digitalWrite(ledPin, ON);
-  
+
   analogWrite(redLED, rgbColor[0]);
   analogWrite(greenLED, rgbColor[1]);
   analogWrite(blueLED, rgbColor[2]);
-  
+
   delayMicroseconds(1100);
   digitalWrite(ledPin, OFF);
 }
