@@ -17,15 +17,18 @@ const int buttonGround3 = 13;
 const int buttonGround4 = 9;
 
 // LED Grounds
-const int ledGround1    = 10;
-const int ledGround2    = 11;
-const int ledGround3    = 2;
-const int ledGround4    = 8;
+const int LED_GROUND_1    = 10;
+const int LED_GROUND_2    = 11;
+const int LED_GROUND_3    = 2;
+const int LED_GROUND_4    = 8;
 
 // RGB Pins
 const int redLED        = 3;
 const int greenLED      = 6;
 const int blueLED       = 5;
+
+const int ON = LOW;
+const int OFF = HIGH;
 
 // Color definitions
 int red[] = {255, 0, 0};
@@ -35,147 +38,146 @@ int purple[] = {255, 0, 150};
 int yellow[] = {255, 255, 0};
 int dark[] = {0, 0, 0};
 
-void setup(){
-  // Switch grounds
-  pinMode(buttonGround1, INPUT);
-  pinMode(buttonGround2, INPUT);
-  pinMode(buttonGround3, INPUT);
-  pinMode(buttonGround4, INPUT);
+class LedButton {
+  public:
+    LedButton(int buttonPin, int buttonMode, int ledPin, int ledMode, int color[]){
+      _buttonPin = buttonPin;
+      _ledPin    = ledPin;
+      _color     = color;
 
-  // LED Grounds
-  pinMode(ledGround1, OUTPUT);
-  pinMode(ledGround2, OUTPUT);
-  pinMode(ledGround3, OUTPUT);
-  pinMode(ledGround4, OUTPUT);
+      pinMode(_buttonPin, buttonMode);
+      pinMode(_ledPin, ledMode);
+    }
+
+    int isPressed(){
+      return _downstate == 1 || digitalRead(_buttonPin) == HIGH;
+    }
+
+    void off(){
+      setLED(_ledPin, dark);
+    }
+
+    void on(){
+      setLED(_ledPin, _color);
+    }
+
+    int handlePress(unsigned long currentTime){
+      int val = digitalRead(_buttonPin);
+      int state = OFF;
+      if(_downstate == 1 || val == HIGH ){
+        _downstate = 1;
+        if(val == HIGH){
+          _activatedAt = currentTime >= 0 ? currentTime : 0;
+        }
+        setLED(_ledPin, _color);
+        state = ON;
+      }
+
+      if(val == LOW && _activatedAt > 0){
+        if(currentTime - _activatedAt >= 200){
+          _downstate = 0;
+          _activatedAt = 0;
+          state = OFF;
+          Serial.println("btn is off");
+        }
+      }
+      return state;
+    }
+
+  private:
+    int _buttonPin;
+    int _ledPin;
+    int _downstate;
+    int *_color;
+    unsigned long _activatedAt;
+
+    void setLED(int ledPin, int rgbColor[]){
+      digitalWrite(ledPin, ON);
+
+      analogWrite(redLED, rgbColor[0]);
+      analogWrite(greenLED, rgbColor[1]);
+      analogWrite(blueLED, rgbColor[2]);
+
+      delayMicroseconds(1100);
+      digitalWrite(ledPin, OFF);
+    }
+
+};
+
+LedButton* button1;
+LedButton* button2;
+LedButton* button3;
+LedButton* button4;
+
+void setup(){
+  button1 = new LedButton(buttonGround1, INPUT, LED_GROUND_1, OUTPUT, red);
+  button2 = new LedButton(buttonGround2, INPUT, LED_GROUND_2, OUTPUT, green);
+  button3 = new LedButton(buttonGround3, INPUT, LED_GROUND_3, OUTPUT, blue);
+  button4 = new LedButton(buttonGround4, INPUT, LED_GROUND_4, OUTPUT, yellow);
 
   // RGB Pins
   pinMode(redLED,   OUTPUT);
   pinMode(greenLED, OUTPUT);
   pinMode(blueLED,  OUTPUT);
 
-  Serial.begin(9600);           // set up Serial library at 9600 bps
+  Serial.begin(9600);
 }
-
-const int ON = LOW;
-const int OFF = HIGH;
-
-int counter = 0;
-int interval = 40;
-
-int state = 0;
-
-const int TOUCH_UP_DELAY = 1000;
-
-unsigned long timers[]     = {0,0,0,0};
-int downstates[] = {0,0,0,0};
 
 void loop(){
   unsigned long current_time = millis();
-  int btn1 = digitalRead(buttonGround1);
-  int btn2 = digitalRead(buttonGround2);
-  int btn3 = digitalRead(buttonGround3);
-  int btn4 = digitalRead(buttonGround4);
+  LedButton* buttons[] = { button1, button2, button3, button4 };
 
-  setFourLEDs(dark, dark, dark, dark);
-
-  if(downstates[0] == 1 || btn1 == HIGH){
-    downstates[0] = 1;
-    if(btn1 == HIGH){
-      timers[0] = current_time >= 0 ? current_time : 0;
-      if(timers[0] < 0){
-        setLED(ledGround2, green);
-      }
-    }
-    setLED(ledGround1, red);
-  }
-  if(btn2 == HIGH){
-    setLED(ledGround2, green);
-  }
-  if(btn3 == HIGH){
-    setLED(ledGround3, blue);
-  }
-  if(btn4 == HIGH){
-    setLED(ledGround4, yellow);
+  // Make sure all buttons start in an off state. We will turn
+  // them on if they need to be on.
+  for(int i=0; i<4 ; i++){
+    buttons[i]->off();
   }
 
-  if(timers[0] < 0){
-    setLED(ledGround4, yellow);
-  }
-
-  if(timers[0] > 0){
-    setLED(ledGround3, blue);
-  }
-
-  if(btn1 == LOW && timers[0] > 0){
-    // Serial.print("Millis: ");
-    // Serial.print(millis());
-    // Serial.print("   Timer: ");
-    // Serial.println(timers[0]);
-
-    if(current_time - timers[0] >= 200){
-      downstates[0] = 0;
-      timers[0] = 0;
-      Serial.println("btn1 is off");
+  for(int i=0; i<4 ; i++){
+    if(buttons[i]->handlePress(current_time) == ON){
+      break;
     }
   }
 
+  // button1->handlePress(current_time);
+  // button2->handlePress(current_time);
+  // button3->handlePress(current_time);
+  // button4->handlePress(current_time);
 
-//  int old_state = state;
-//
-//  if(counter == interval*4){
-//    counter = 0;
-//  }
+  // if(downstates[0] == 1 || btn1 == HIGH){
+  //   downstates[0] = 1;
+  //   if(btn1 == HIGH){
+  //     timers[0] = current_time >= 0 ? current_time : 0;
+  //     if(timers[0] < 0){
+  //       setLED(LED_GROUND_2, green);
+  //     }
+  //   }
+  //   setLED(LED_GROUND_1, red);
+  // }
+  // if(btn2 == HIGH){
+  //   setLED(LED_GROUND_2, green);
+  // }
+  // if(btn3 == HIGH){
+  //   setLED(LED_GROUND_3, blue);
+  // }
+  // if(btn4 == HIGH){
+  //   setLED(LED_GROUND_4, yellow);
+  // }
 
-//    setLED(ledGround1, red);
-//    setLED(ledGround2, red);
-//    setLED(ledGround3, red);
-//    setLED(ledGround4, red);
-//
-//  if(counter >= 0 && counter < interval){
-//    state = 1;
-//    setLED(ledGround1, red);
-//    setLED(ledGround2, green);
-//    setLED(ledGround3, blue);
-//  } else if(counter >= interval*1 && counter <= interval*2){
-//    state = 2;
-//    setLED(ledGround1, green);
-//    setLED(ledGround2, blue);
-//    setLED(ledGround3, red);
-//  } else if(counter >= interval*2){
-//    state = 3;
-//    setLED(ledGround1, blue);
-//    setLED(ledGround2, red);
-//    setLED(ledGround3, green);
-//  }
+  // if(timers[0] < 0){
+  //   setLED(LED_GROUND_4, yellow);
+  // }
 
- // if(old_state != state){
-    //Serial.begin(9600);           // set up Serial library at 9600 bps
-  //  Serial.println("color change occurred");  // prints hello with ending line break
- // }
+  // if(timers[0] > 0){
+  //   setLED(LED_GROUND_3, blue);
+  // }
 
- // Serial.print(digitalRead(buttonGround1));
-//     Serial.println("button press occurred");  // prints hello with ending line break
-//  }
+  // if(btn1 == LOW && timers[0] > 0){
+  //   if(current_time - timers[0] >= 200){
+  //     downstates[0] = 0;
+  //     timers[0] = 0;
+  //     Serial.println("btn1 is off");
+  //   }
+  // }
 
- // delay(1000);
- // counter += 1;
 }
-
-void setLED(int ledPin, int rgbColor[]){
-  digitalWrite(ledPin, ON);
-
-  analogWrite(redLED, rgbColor[0]);
-  analogWrite(greenLED, rgbColor[1]);
-  analogWrite(blueLED, rgbColor[2]);
-
-  delayMicroseconds(1100);
-  digitalWrite(ledPin, OFF);
-}
-
-void setFourLEDs(int colorOne[], int colorTwo[], int colorThree[], int colorFour[]){
-  setLED(ledGround1, colorOne);
-  setLED(ledGround2, colorTwo);
-  setLED(ledGround3, colorThree);
-  setLED(ledGround4, colorFour);
-}
-
