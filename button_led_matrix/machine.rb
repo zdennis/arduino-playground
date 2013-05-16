@@ -4,6 +4,17 @@ require 'bundler/setup'
 require 'serialport'
 require 'celluloid'
 
+#
+# irb
+# > require './machine'
+# > m = Machine.new
+# > m.transition :select_project
+# > m.transition :next_project    # keep transitioning to this state to rotate through projects
+# >
+# > m.transition :select_task
+# > m.transition :next_task    # keep transitioning to this state to rotate through projects
+#
+# > m.transition :pick_task    # this is the end
 
 class Machine
   include Celluloid::FSM
