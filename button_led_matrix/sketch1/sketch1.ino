@@ -139,45 +139,4 @@ void loop(){
     }
   }
 
-  // button1->handlePress(current_time);
-  // button2->handlePress(current_time);
-  // button3->handlePress(current_time);
-  // button4->handlePress(current_time);
-
-  // if(downstates[0] == 1 || btn1 == HIGH){
-  //   downstates[0] = 1;
-  //   if(btn1 == HIGH){
-  //     timers[0] = current_time >= 0 ? current_time : 0;
-  //     if(timers[0] < 0){
-  //       setLED(LED_GROUND_2, green);
-  //     }
-  //   }
-  //   setLED(LED_GROUND_1, red);
-  // }
-  // if(btn2 == HIGH){
-  //   setLED(LED_GROUND_2, green);
-  // }
-  // if(btn3 == HIGH){
-  //   setLED(LED_GROUND_3, blue);
-  // }
-  // if(btn4 == HIGH){
-  //   setLED(LED_GROUND_4, yellow);
-  // }
-
-  // if(timers[0] < 0){
-  //   setLED(LED_GROUND_4, yellow);
-  // }
-
-  // if(timers[0] > 0){
-  //   setLED(LED_GROUND_3, blue);
-  // }
-
-  // if(btn1 == LOW && timers[0] > 0){
-  //   if(current_time - timers[0] >= 200){
-  //     downstates[0] = 0;
-  //     timers[0] = 0;
-  //     Serial.println("btn1 is off");
-  //   }
-  // }
-
 }
