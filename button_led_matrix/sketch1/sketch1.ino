@@ -78,7 +78,6 @@ class LedButton {
           _downstate = 0;
           _activatedAt = 0;
           state = OFF;
-          Serial.println("btn is off");
         }
       }
       return state;
